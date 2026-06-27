@@ -456,7 +456,76 @@ impl/
 | 需要 Event Router 规则引擎 | **设备事件由 Core 1 Python 处理，灵活度更高** |
 | 8MB PSRAM 门槛 | **无 PSRAM 要求，$3 MCU 也能跑** |
 
-**PAL 不否认 ESP-Claw 的价值——它是 Agent-on-Device 方向的工程标杆。但 PAL 相信 Agent-in-Cloud + MicroPython 终端是更简洁、更通用、成本更低的道路。**
+**PAL 不否认 ESP-Claw 的工程价值。但 Agent-on-Device 存在三个根本性问题，PAL 在每个问题上选择了相反的答案。**
+
+### 问题 1：占用资源过大
+
+Agent 循环需要以下资源来维持最基本的 ReAct 推理：
+
+```
+LLM API 调用缓冲区:  ~4-16 KB
+工具注册表 + Schema:  ~2-8 KB
+上下文窗口 (对话历史): ~8-64 KB
+JSON 解析堆:          ~4-16 KB
+Skills 文件系统:       ~不定 (Markdown → Flash)
+```
+
+ESP-Claw 要求 **8 MB PSRAM + 8 MB Flash**，仅固件框架就占用数万行代码。这不是"轻量嵌入式"——这是把一台小型 Linux 机器的负载搬到了 MCU 上。ESP32-S3 的 512 KB SRAM 跑 FreeRTOS + WiFi 栈 + TLS 已经占了大半，剩下的要同时养 Agent 循环和硬件驱动，内存碎片化是常态。
+
+**PAL 的立场：** 终端不跑 Agent 循环。Core 0 只做 I/O 和 WDT（~16KB 栈足够），Core 1 只跑 Python VM（~100KB heap）。剩余资源全部释放给实际任务。
+
+### 问题 2：Agent 循环无法保证稳定性
+
+Agent 的 ReAct 循环本质上是一个**链式重试机制**：
+
+```
+Think → Act → Observe → Think → Act → Observe → ... (最多 10 轮)
+```
+
+每一轮都可能出问题：
+
+| 故障点 | 后果 |
+|---|---|
+| LLM API 超时或返回格式错误 | Agent 循环卡住，等待超时 |
+| 工具调用 JSON 解析失败 | 需要额外 round-trip 让 LLM 修正 |
+| 上下文窗口溢出 | 需要 compaction / summarization，额外 LLM 调用 |
+| WiFi 断连 | API 不可达，设备静默等待重连 |
+
+在服务器上，这些故障有成熟的 retry / circuit-breaker / health-check 机制。在 MCU 上，**一个未处理的网络超时可能导致整个 FreeRTOS 任务栈溢出**——然后看门狗复位整块板子。
+
+ESP-Claw 的 Agent 循环跑在 Core 1 上，但 Core 1 如果崩了，设备失去的不只是 AI 能力——是全部上层逻辑。这就是为什么在生产环境中，你无法信任一个运行 LLM 推理循环的 MCU。
+
+**PAL 的立场：** Agent 循环的稳定性问题交给云端解决。云端的 AstrBot / LangChain 有完整的异常处理、超时重试、上下文管理基础设施。PAL 终端只接收已经决策好的命令——"端上来的是菜，不是菜谱"。
+
+### 问题 3：AI 思考需要时间，实时任务等不起
+
+这是 Agent-on-Device 最本质的物理矛盾：
+
+```
+I2C 喂狗周期:   ~2s（错过 3 次 = 设备离线）
+LLM API 延迟:   ~500ms-5s（取决于模型和网络）
+Agent 多轮推理:  ~2-30s（取决于任务复杂度）
+```
+
+如果 Agent 循环正在等 LLM 返回（5 秒），而这时 PY32 交换机通过 SPI 发来一帧"料盘 0x23 掉线"，**谁来处理这帧数据？**
+
+Agent-on-Device 的答案是"分优先级"——让 I/O 任务优先级比 Agent 循环高。这确实能让 SPI 中断抢到 CPU，但 Agent 的上下文状态在这些打断中可能变得不一致。更严重的是，**Agent 自己也要发起实时操作**——它推理出"需要翻转 0x20 的 LED"，发 SPI 命令。如果这个推理花了 3 秒，LED 翻转晚了 3 秒——在工业场景中，3 秒可以意味着一批料被错装。
+
+**PAL 的立场：** 实时任务（I2C 喂狗、SPI 帧处理、WDT、设备表更新）全部在 PY32 交换机上独立运行，与 Agent 完全异步。PAL 终端只做最上层的决策翻译——Agent 在云端推理出"翻 LED"，终端收到 JSON 后 <1ms 内转发给 PY32。AI 的慢和物理的快之间，有一道明确的墙。
+
+### 总结
+
+```
+               Agent-on-Device              PAL
+               ────────────────             ───
+资源:           Agent 吃掉一半 MCU 资源        Agent 不占终端资源
+稳定性:         一个 API 超时可能拖死板子      云端负责容错，终端只管执行
+实时性:         推理延迟 vs 喂狗周期 矛盾      实时任务在 PY32 上完全独立
+职责边界:       MCU 既是大脑又是手             终端是手，大脑在云上
+调试:           抓日志看 ReAct trace          PY32 逻辑分析仪 + WebSocket JSON
+```
+
+**Agent-on-Device 让嵌入式终端背负了不该它承担的复杂度。PAL 把 Agent 留在云端，终端只做一件事：收到命令，执行，回报结果。**
 
 ---
 
