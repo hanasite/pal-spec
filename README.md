@@ -543,7 +543,7 @@ devices = i2c.scan()
 
 ## 6. 参考实现
 
-本规范附带一个 PAL Level 2 参考实现（目录 `impl/`），基于 ESP32-S3 + PY32F002B：
+本规范附带一个 PAL Level 2 参考实现（目录 `impl/`），基于 ESP32-S3 + 低成本 ARM MCU：
 
 ```
 impl/
@@ -573,7 +573,6 @@ impl/
 | Core 0 C 框架 | 🔄 开发中 (预计 2026 年 8 月) |
 | Core 1 MicroPython | 🔄 开发中 |
 | Agent 客户端库 | 🔄 开发中 |
-| 硬件验证（I2C 热插拔底层） | ✅ 已跑通 (PY32F002B) |
 
 ---
 
