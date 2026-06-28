@@ -865,6 +865,7 @@ impl/
 | 组件 | 状态 |
 |---|---|
 | PAL 协议定义 | ✅ v0.1 |
+| PAL Level 1 硬件验证 | ✅ ESP32-S3 (2026-06-28) |
 | Core 0 C 框架 | 🚧 开发中 |
 | Core 1 MicroPython | 🚧 开发中 |
 | Agent 客户端库 | 📝 设计中 |
