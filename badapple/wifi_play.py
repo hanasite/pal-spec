@@ -10,7 +10,7 @@ led = Pin(21, Pin.OUT)
 oled.fill(0); oled.text("WiFi...", 30, 28); oled.show()
 wlan = network.WLAN(network.STA_IF)
 wlan.active(False); time.sleep(0.3); wlan.active(True); time.sleep(0.3)
-wlan.connect('我去初音未来！', 'hatsunemiku')
+wlan.connect('YOUR_SSID', 'YOUR_PASSWORD')
 for _ in range(30):
     if wlan.isconnected(): break
     time.sleep(0.5)
