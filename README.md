@@ -869,6 +869,14 @@ impl/
 | Core 0 C 框架 | 🚧 开发中 |
 | Core 1 MicroPython | 🚧 开发中 |
 | Agent 客户端库 | 📝 设计中 |
+| SSD1306 OLED 驱动 | ✅ I2C 128×64 |
+| W25Q64 8MB Flash | ✅ SPI 读写验证 |
+| Bad Apple 25fps 播放 | ✅ 5478 帧 W25Q64→OLED |
+| PAL 协议自愈闭环 | ✅ Claude→ESP32→错误→修复→验证 (14min) |
+
+**演示视频**：[`demo-videos/`](demo-videos/) — 双 LED 异步闪烁、OLED 显示、Bad Apple 完整播放。
+
+**踩坑记录**：[`badapple/LESSONS.md`](badapple/LESSONS.md) — 视频打包方向 ×3、USB 上拉、WiFi 全角字符、W25Q64 旧数据等 8 个坑。
 
 ---
 
