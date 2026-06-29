@@ -1,6 +1,6 @@
 # PAL: Physical Abstraction Layer
 
-> **PAL abstracts physical execution behind standard interfaces — making hardware modular, language-agnostic, and AI-ready.**
+> **让 AI 一统所有单片机——PAL abstracts physical execution behind standard interfaces, making hardware modular, language-agnostic, and AI-ready.**
 >
 > *REPL Is All You Need.*
 >
