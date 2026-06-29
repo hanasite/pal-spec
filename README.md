@@ -11,6 +11,8 @@
 > AI 可以写诗、作曲、编程，却被困在屏幕里，无法翻转一个 GPIO。
 > **PAL 是通往物理世界的最后一公里。**
 
+<p align="center"><img src="dickens.webp" width="120" alt="Charles Dickens"></p>
+
 ---
 
 # PAL: Physical Abstraction Layer
