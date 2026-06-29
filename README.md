@@ -452,6 +452,49 @@ Agent ↔ 终端之间的传输层是可替换的：
 
 **Task Manager（任务管理器）**：PAL 调度器的引擎。数组式任务表（O(n) 全表扫描，n ≤ 20），RTC 绝对时间驱动，相位锁定调度。
 
+**Task Registry 工作流**：
+
+```
+Agent 下发 JSON {"brief": {...}, "code": "..."}
+        │
+        ▼
+  ① 解析 brief（任务名/资源需求/周期/超时/存储类型）
+        │
+        ▼
+  ② 资源冲突检测 → 冲突则返回详情给 Agent
+        │
+        ▼
+  ③ 生成唯一 task_id，状态=PENDING，计算首次触发 = now + interval
+        │
+        ▼
+  ④ 持久化：volatile → RAM；persistent → NVS Flash + RAM
+        │
+        ▼
+  ⑤ 唤醒 Task Manager（xTaskNotifyGive）
+        │
+        ▼
+  返回 Agent {"task_id": "001", "status": "registered"}
+```
+
+**Task Manager 数据结构**：
+
+```c
+#define MAX_PAL_TASKS 20
+
+typedef struct {
+    char     task_id[16];          // Agent 查询/取消
+    uint64_t next_trigger_abs;     // RTC 绝对时间（μs）
+    uint32_t interval_us;          // 周期（0 = 一次性）
+    uint32_t code_ptr;             // code 字符串指针
+    uint32_t pins_mask;            // 引脚占用位图
+    uint8_t  state;                // 0=空闲 1=启用 2=执行中
+    uint32_t timeout_ms;           // 执行超时
+    uint8_t  storage_type;         // volatile / persistent
+} pal_task_t;
+
+pal_task_t g_task_table[MAX_PAL_TASKS];  // 全局任务表（RAM + NVS）
+```
+
 **WebSocket Server**：Agent ↔ Core 0 唯一通信通道。JSON 解析 + 指令路由（register / cancel / status / result）。
 
 **Hardware Watchdog**：Core 1 超时监护 + 硬复位兜底。卡死 → 不等、不诊断——直接硬件复位，恢复干净状态。
