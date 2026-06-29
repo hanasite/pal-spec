@@ -1,6 +1,6 @@
 # PAL: Physical Abstraction Layer
 
-> **An Agent-Friendly Embedded Terminal Standard — v0.1 (Draft)**
+> **PAL abstracts physical execution behind standard interfaces — making hardware modular, language-agnostic, and AI-ready.**
 >
 > *REPL Is All You Need.*
 >
@@ -74,9 +74,14 @@
 
 当前 AI Agent 主要工作在数字环境中——写代码、调 API、搜网页。它们缺乏直接操控物理设备的能力。现有的嵌入式执行方案（裸机 C、ESP-Claw/Lua、树莓派/Linux）要么太重、要么绑定框架、要么对 Agent 不友好。
 
-**PAL** 提出一个简洁的范式：利用 MicroPython REPL 作为 Agent 操控物理世界的唯一接口。核心理念：**Agent 在云端推理，终端只做执行。** 终端通过双核分离架构保证安全——Core 0 运行不可修改的 C 固件（硬实时、系统完整性），Core 1 运行开放的 MicroPython（Agent 操作空间）。不到 10 个硬件原语覆盖 99% 的物理操控需求。
+**PAL** 不是固件，不是库，不是操作系统。它是一个 **基于标准通信接口的模块化执行终端架构**。
 
-PAL 不绑定任何 Agent 框架，基于标准 ESP-IDF 和 MicroPython，硬件成本约 $3-5。
+核心理念：在**已知的物理外设**（UART / I2C / SPI / GPIO）和**公认的传输协议**（JSON）之上，把"决策逻辑"和"硬件执行"彻底解耦。
+
+- **决策层（大脑）**：云端 Agent 通过 JSON 下发指令，不关心底层是什么芯片
+- **执行层（手）**：终端通过标准 MicroPython REPL 执行 `code` 字段，返回 JSON 结果
+
+**所有符合 PAL 规范的设备——ESP32、STM32、RP2040、树莓派——都可以通过同样的协议互相通信、组合、替换。** PAL 不绑硬件、不绑语言、不绑厂商，只绑"协议"。
 
 ---
 
@@ -196,9 +201,9 @@ REPL:                     Agent:
 
 ### 是什么
 
-- ✅ **ESP32 级设备的 AI 路由层** — PAL 定义 ESP32-S3（或等效双核 WiFi MCU）如何接收云端 Agent 的 JSON 命令，翻译为 Python 代码在 Core 1 执行，并通过 Core 0 的 C 驱动与下层硬件通信。
-- ✅ **自带执行能力的终端** — PAL Level 2 的标准终端 **不仅能路由命令，还能直接执行 Python 操控硬件**。这是它跟一个纯串口透传模块的本质区别：Agent 不是"发指令给一个黑盒"，而是"直接在终端上跑 Python 读传感器、控 GPIO、扫 I2C"。
-- ✅ **与 Layer 1 解耦的架构约定** — PAL 只定义 Layer 2（ESP32 Core 0/1）和 Layer 3（云端 Agent 协议）。Layer 1 可以是任何具备硬实时能力的 MCU 或 FPGA，通过 SPI/I2C/UART 与 PAL 终端通信。**PAL 不绑定任何一种总线协议或硬件方案。**
+- ✅ **芯片无关的物理执行抽象层** — PAL 在标准外设接口（UART/I2C/SPI）和公认传输协议（JSON）之上，将"决策逻辑"与"硬件执行"彻底解耦。任何实现 PAL 协议的 MCU（ESP32、STM32、RP2040、树莓派）都是平等的 PAL 节点。
+- ✅ **自带执行能力的终端** — PAL 终端**不仅能路由命令，还能直接执行 Python 操控硬件**。这是它跟一个纯串口透传模块的本质区别：Agent 不是"发指令给一个黑盒"，而是"直接在终端上跑 Python 读传感器、控 GPIO、扫 I2C"。
+- ✅ **只绑协议，不绑硬件** — PAL 定义的是 JSON 协议格式和抽象架构，不绑定任何具体芯片、厂商、编程语言。任何 MCU 只要能跑 MicroPython REPL，就能成为 PAL 节点。
 
 ```
 ┌─────────────────────────────────────────┐
