@@ -1,3 +1,18 @@
+> *这是最好的时代，也是最坏的时代；*
+> *这是智慧的时代，也是愚蠢的时代；*
+> *这是信任的年代，也是怀疑的年代；*
+> *这是光明的季节，也是黑暗的季节；*
+> *这是希望的春天，也是失望的冬天；*
+> *我们将拥有一切，我们将一无所有；*
+> *我们直升天堂，我们直下地狱。*
+>
+> — 查尔斯·狄更斯《双城记》
+>
+> AI 可以写诗、作曲、编程，却被困在屏幕里，无法翻转一个 GPIO。
+> **PAL 是通往物理世界的最后一公里。**
+
+---
+
 # PAL: Physical Abstraction Layer
 
 > **让 AI 一统所有单片机——PAL abstracts physical execution behind standard interfaces, making hardware modular, language-agnostic, and AI-ready.**
